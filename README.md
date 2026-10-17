@@ -1,6 +1,6 @@
 # omnilab/launches
 
-The Space Devs' Launch Library 2 for [glitchr/omnilab](https://github.com/glitchr-studio/omnilab):
+The Space Devs' Launch Library 2 for [omniscient/omnilab](https://github.com/glitchr-studio/omnilab):
 orbital launches, past and planned - a launch by its id (its rocket, provider, mission and orbit,
 pad and its place, date and its precision, window, status, probability, the failure's reason), a
 search by text, and the launches of a period as occurrences, each with its time (NET, "no earlier
