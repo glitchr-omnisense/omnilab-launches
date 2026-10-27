@@ -1,5 +1,10 @@
 # omnilab/launches
 
+The Space Devs' Launch Library 2 (`https://ll.thespacedevs.com/2.3.0/`) for
+[omnisense/omnilab](https://github.com/glitchr-omnisense/omnilab): orbital launches, past and
+planned, by id or text - rocket, provider, mission, orbit, pad, status - as entities, and the
+launches of a period as occurrences at their pads. No key (15 calls an hour).
+
 ## Installation
 
 ```sh
@@ -19,6 +24,51 @@ $launches = (new LaunchesSourceFactory($httpClient))->create([
 With the Symfony bundle, the factory is registered as `launches` when the bundle knows it;
 otherwise register `LaunchesSourceFactory` as a service (it is autoconfigured as a
 `SourceFactoryInterface`).
+
+## Credentials
+
+None needed: Launch Library 2 answers 15 calls an hour without a key (a 429 beyond). A higher
+limit comes with a key The Space Devs give their supporters (on Patreon), given as `api_key` and
+sent as `Authorization: Token ...`. To develop, The Space Devs ask that their development server
+be used: `base_uri: https://lldev.thespacedevs.com/2.3.0/` (stale, limited data, no rate limit).
+
+## Options
+
+The factory's options, with the defaults it applies (`LaunchesSourceFactory`):
+
+| Option | Type | Default | Required | Effect |
+|---|---|---|---|---|
+| `api_key` | `?string` | null | no | a supporter's key from The Space Devs, sent as `Authorization: Token ...`; null: no header, 15 calls an hour |
+| `mailto` | `?string` | null | no | a contact address, sent in the User-Agent |
+| `user_agent` | `?string` | null | no | the whole User-Agent, in place of the one made from `mailto` |
+| `throttle` | `float` | `0` | no | seconds left between two calls; the limit is counted an hour (15 without a key): the caller keeps to it |
+| `base_uri` | `string` | `https://ll.thespacedevs.com/2.3.0/` | no | LL2 2.3.0: the live server, or the development one (`https://lldev.thespacedevs.com/2.3.0/`) |
+
+Per call, `occurrences()` reads the filters `provider`, `rocket`, `location`, `crewed`, `status`
+and `orbit` ([below](#which-api)); any other key, the shared ones (`country`, `kind`...) included,
+is refused before any call.
+
+## Capabilities
+
+`capabilities()` answers `entity`, `search`, `occurrences`; an operation it does not answer throws `NotSupportedException` before any call.
+
+| Capability | Supported | |
+|---|---|---|
+| `entity` | yes | a launch's UUID (`launch:`, `launchlibrary:`, its API address); never read by its shape alone (OBIS's records are UUIDs too): a bare UUID is read as LL2's by this source |
+| `search` | yes | LL2's `search` over name, mission, rocket and provider, paged by offset, `total` LL2's count; a domain other than `other` answers an empty page |
+| `series` | no |  |
+| `products` | no |  |
+| `occurrences` | yes | the launches of a period, each at its pad, oldest first by default (`newest` too), 100 a page at most; no place: LL2 filters by no box nor circle |
+| `datasets` | no |  |
+| `jobs` | no |  |
+| `open` | no |  |
+| `structure` | no |  |
+| `cross_references` | no | none: LL2 gives Wikipedia links only |
+| `forecast` | no |  |
+| `historical` | no |  |
+| `area` | no | a place is refused before any call: narrow by `location` (LL2's launch site ids) |
+| `station` | no |  |
+| `cloud_cover` | no |  |
 
 ## Which API
 
@@ -67,6 +117,53 @@ Events, astronauts, spacecraft, space stations, expeditions, dockings, agencies,
 landings (each an endpoint of LL2), the `detailed` mode's statistics, the timelines, the updates,
 the videos, and the Spaceflight News API.
 
+## Example
+
+```php
+<?php
+
+require __DIR__.'/vendor/autoload.php';
+
+use Omnilab\Launches\LaunchesSourceFactory;
+use Omnilab\Source\OccurrenceQuery;
+use Symfony\Component\HttpClient\HttpClient;
+
+$launches = (new LaunchesSourceFactory(HttpClient::create()))->create(['mailto' => 'you@example.org']);   // 15 calls an hour without a key
+
+$page = $launches->occurrences(new OccurrenceQuery(null, new DateTimeImmutable('2026-10-20'), new DateTimeImmutable('2026-10-26'), limit: 4));
+printf("%d launches from 2026-10-20 to 10-26; the first %d:\n", $page->total, count($page));
+foreach ($page as $launch) {
+    printf("  %s UTC  %-45s %s, %s\n", $launch->time->format('Y-m-d H:i'), $launch->label, $launch->value('status'), $launch->value('location'));
+}
+```
+
+```
+7 launches from 2026-10-20 to 10-26; the first 4:
+  2026-10-20 11:04 UTC  Falcon 9 Block 5 | Bandwagon 5 (Dedicated Mid-Inclination Rideshare) Launch Successful, Cape Canaveral SFS, FL, USA
+  2026-10-21 03:39 UTC  Ceres-1S | Xiguang-4 01                       Launch Successful, Haiyang Oriental Spaceport
+  2026-10-23 07:11 UTC  Electron | We're Not Hawking Around (3x HawkEye 360) Launch Successful, Rocket Lab Launch Complex 1, Mahia Peninsula, New Zealand
+  2026-10-23 10:15 UTC  Long March 6A | Yaogan 50-03                  Launch Successful, Taiyuan Satellite Launch Center, People's Republic of China
+```
+
+(as answered on 2026-10-27: one call). SpaceX's crewed launches would be
+`[... filters: ['provider' => 'SpaceX', 'crewed' => true]]`.
+
+```yaml
+# config/packages/omnilab.yaml
+omnilab:
+    sources:
+        launches: { factory: launches, options: { mailto: '%env(OMNILAB_MAILTO)%', api_key: '%env(default::LL2_API_KEY)%' } }
+```
+
+## Errors
+
+Every call goes through `HttpSource`: a 404 or a 410 (and a 204) is null - an empty page for a list -; a 429 is a `RateLimitedException` (`retryAfter` from `Retry-After`); a 5xx, a time-out or a host that does not answer an `UnavailableException`; any other 4xx a `ProviderException` with its `status` and what the service said; an answer that is not JSON a `ProviderException`, a web page answered for JSON an `UnavailableException`.
+
+Before any call (`NotSupportedException`): an identifier that is no launch's, a place in an
+occurrence query, a filter key not read, a sort other than `newest` and `oldest`. Past 15 calls an
+hour without a key LL2 answers 429: a `RateLimitedException`, with `retryAfter` when LL2 says. An
+unknown id is LL2's 404, null.
+
 ## Verified, and not
 
 Against the real service on 2026-10-15 and 2026-10-16: Crew-13 by its id (4.1 s), the launches of
@@ -74,6 +171,20 @@ Against the real service on 2026-10-15 and 2026-10-16: Crew-13 by its id (4.1 s)
 (one), the searches for `Artemis` (eight) and `Starship` (27), an unknown id (404); the throttle
 endpoint (15 an hour). The fixtures in `Tests/Fixtures/` are its answers.
 
+Again on 2026-10-27: the launches of 20 to 26 October 2026 (seven, four a page; the example
+above), one call.
+
 Not verified: the 429 met (the fixture is written after LL2's documented answer; the run stayed
 under the limit); a key (none was obtained); every filter's live effect beyond `provider` and
 `crewed`.
+
+## Responsibility
+
+This package is an independent, unofficial client: it is not affiliated with, endorsed by or
+sponsored by The Space Devs. Launch Library 2 is free within its rate limit; The Space Devs ask
+that development use their development server and that Launch Library 2 be credited as the
+source, each image carrying its own credit and licence, as the README's
+[Terms of use](https://github.com/glitchr-omnisense/omnilab-launches#terms-of-use) says. Whoever
+runs the package is responsible for complying with them and for any use made of what it returns:
+see the README's [Responsibility](https://github.com/glitchr-omnisense/omnilab-launches#responsibility)
+section.
