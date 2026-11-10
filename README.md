@@ -40,6 +40,17 @@ that The Space Devs give their supporters (on Patreon), which the user obtains a
 limited data, no rate limit) be used: set it as `base_uri`. Credit The Space Devs' Launch Library
 2 as the source; each image carries its own credit and licence.
 
+## Usage policy
+
+Declared as data in [`policy.json`](policy.json) (read at https://thespacedevs.com/llapi on 2026-11-10), and honoured on every request by the
+core: a limit reached waits when its window ends within `max_wait` seconds, else the request is not
+sent ([Usage policies](https://github.com/glitchr-omnisense/omnilab/blob/1.x/docs/policies.md)).
+
+- Limits: 15 a hour.
+- Licence: not stated; commercial use: unknown.
+- Credit: not required.
+- Needs: nothing.
+
 ## Responsibility
 
 This package is an independent, unofficial client: it is not affiliated with, endorsed by or

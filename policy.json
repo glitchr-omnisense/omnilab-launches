@@ -1,0 +1,46 @@
+{
+    "$schema": "https://github.com/glitchr-omnisense/contracts/blob/1.x/resources/usage-policy.schema.json",
+    "provider": "launches",
+    "rateLimits": [
+        {
+            "max": 15,
+            "window": "hour",
+            "scope": "application",
+            "operations": [],
+            "note": "The Space Devs (thespacedevs.com/llapi): \"up to 15 non-authenticated requests per hour\"; higher rates for Patreon supporters with a key. The API's own /api-throttle/ endpoint answered {\"your_request_limit\":15,\"limit_frequency_secs\":3600} with the caller's IP as \"ident\" on 2026-11-10."
+        }
+    ],
+    "concurrency": null,
+    "rights": {
+        "commercial": "unknown",
+        "openSourceRequired": null,
+        "caching": {
+            "permission": "unknown",
+            "maxTtl": null
+        },
+        "storage": "unknown",
+        "redistribution": "unknown",
+        "attribution": {
+            "required": false,
+            "text": null,
+            "url": null,
+            "where": []
+        },
+        "licence": null
+    },
+    "requirements": {
+        "key": false,
+        "userAgent": {
+            "required": false,
+            "pattern": null
+        }
+    },
+    "provenance": {
+        "terms": null,
+        "policy": "https://thespacedevs.com/llapi",
+        "verifiedAt": "2026-11-10",
+        "declaredBy": "maintainer",
+        "contact": null,
+        "notes": "Read 2026-11-10: thespacedevs.com/llapi (the docs page at ll.thespacedevs.com/docs/ renders nothing without JavaScript). The data is \"accessible to everyone, for free\"; no terms of use, licence, attribution or commercial-use statement found. The keyed (supporter) figure is not published on that page. The development server lldev.thespacedevs.com (stale data, no limit) in this package's README was not confirmed on the provider's pages. Each image carries its own credit and licence (README, not re-read at source)."
+    }
+}
