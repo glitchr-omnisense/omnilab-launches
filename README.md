@@ -31,6 +31,35 @@ omnilab:
 
 See [docs/](docs/index.md) for what is read, how it maps, and what LL2 does not give here.
 
+## Install and a first call
+
+```sh
+composer require omnilab/launches
+```
+
+A real call, with no account and no key: a launch of The Space Devs' Launch Library 2 (15 calls an
+hour without a key). `mailto` is your address, sent in the User-Agent so that the service can reach
+you before it blocks a caller; the source keeps to the limits its [`policy.json`](policy.json)
+declares.
+
+```php
+<?php
+
+require __DIR__.'/vendor/autoload.php';
+
+use Omnilab\Launches\LaunchesSourceFactory;
+
+$launches = (new LaunchesSourceFactory())->create(['mailto' => 'you@example.org']);   // your address, in the User-Agent
+$launch = $launches->entity('18441371-8b2e-457c-afb5-1ec1b11ab630');
+echo $launch->label, ', ', $launch->time->format('Y-m-d H:i T'), ', ', $launch->value('status'), "\n";
+```
+
+Its output on 2026-11-13:
+
+```
+Falcon 9 Block 5 | Crew-13, 2026-10-01 15:10 UTC, Launch Successful
+```
+
 ## Terms of use
 
 Launch Library 2 is a product of The Space Devs, free to use within its rate limit: 15 calls an
